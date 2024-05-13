@@ -99,7 +99,7 @@ class ConversationExporter(discord.Client):
 
         # message.referenceで、返信先のメッセージを取得できる。message.reference.idは返信先のメッセージのID
         for message_id, message in history.items():
-            if message.id in processed_messages:
+            if message.id in processed_messages or message.author.bot:
                 continue
 
             conversation = [message]
