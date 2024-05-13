@@ -3,9 +3,11 @@ import csv
 import json
 import logging
 import os
+from datetime import datetime
 from typing import Dict
 
 import discord
+from discord import app_commands
 from discord.app_commands import CommandTree
 
 
@@ -70,7 +72,7 @@ class ConversationExporter(discord.Client):
             await self.tree.client.tree.sync()
             self.synchronized = True
 
-    async def on_export(self, interaction: discord.Interaction):
+    async def on_export(self, interaction: discord.Interaction, before: str=None, after: str=None):
         guild_id = interaction.guild_id
         channel_id = interaction.channel_id
         channel = interaction.channel
@@ -88,7 +90,10 @@ class ConversationExporter(discord.Client):
 
         # fetch history
         history = {}
-        async for fetched in channel.history(limit=None):
+        fetch_limit = None
+        fetch_before = None if before is None else discord.utils.parse_time(before)
+        fetch_after = None if after is None else discord.utils.parse_time(after)
+        async for fetched in channel.history(limit=fetch_limit, before=fetch_before, after=fetch_after):
             history[fetched.id] = fetched
 
         # structure conversations based on reply ids
@@ -204,8 +209,9 @@ def main():
     client = ConversationExporter(settings_repository=settings_repository, intents=intents, activity=activity)
 
     @client.tree.command(name='会話エクスポート', description='このコマンドを実行したチャンネルの会話をエクスポートします。')
-    async def export(interaction: discord.Interaction):
-        await client.on_export(interaction)
+    @app_commands.describe(before="何日から", after="何日まで")
+    async def export(interaction: discord.Interaction, before: str=None, after: str=None):
+        await client.on_export(interaction, before, after)
 
     bot_token = os.getenv("BOT_CONVERSATION_EXPORTER_TOKEN", "")
     logging.log(level=logging.INFO, msg="bot_token: " + bot_token)
