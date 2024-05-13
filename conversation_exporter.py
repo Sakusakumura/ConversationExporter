@@ -88,12 +88,14 @@ class ConversationExporter(discord.Client):
 
         # fetch history
         history = {}
-        async for fetched in channel.history():
+        async for fetched in channel.history(limit=None):
             history[fetched.id] = fetched
 
         # structure conversations based on reply ids
         conversations = []
         processed_messages = set()
+
+        print(f"fetched {len(history)} messages")
 
         # message.referenceで、返信先のメッセージを取得できる。message.reference.idは返信先のメッセージのID
         for message_id, message in history.items():
@@ -113,7 +115,6 @@ class ConversationExporter(discord.Client):
                 processed_messages.add(reply_id)
                 message = reply_message
 
-            print(f"append: {conversation}")
             conversations.append(conversation)
 
         # export conversations to a file
